@@ -1,0 +1,16 @@
+diff --git a/lib/ff_config.c b/lib/ff_config.c
+--- a/lib/ff_config.c
++++ b/lib/ff_config.c
+@@ -1046,6 +1046,12 @@ dpdk_args_setup(struct ff_config *cfg)
+     int n = 0, i;
+     dpdk_argv[n++] = strdup("f-stack");
+     char temp[DPDK_CONFIG_MAXLEN] = {0}, temp2[DPDK_CONFIG_MAXLEN] = {0};
++    /* Packet Generator: private single-process hugepages. Multi-process
++     * workers retain backing files so secondary EAL instances can attach.
++     * Their owner removes only its group files after every worker exits. */
++    if (!cfg->dpdk.no_huge && cfg->dpdk.nb_procs == 1)
++        dpdk_argv[n++] = strdup("--huge-unlink=always");
++
+ 
+     if (cfg->dpdk.no_huge) {
+         dpdk_argv[n++] = strdup("--no-huge");

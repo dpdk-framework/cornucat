@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 392" width="1120" height="392" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">CornuCat: one packet builder, two paths</title>
+  <desc id="diagram-desc">The IPv4 packet builder assembles UDP, TCP, or ICMP frames. One path writes or inspects a capture without sending traffic. The other uses a prepared Linux DPDK port.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#11192c"/>
+      <stop offset="1" stop-color="#101e31"/>
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#8da8ce" opacity=".17"/>
+    </pattern>
+  </defs>
+
+  <rect x="1" y="1" width="1118" height="390" rx="24" fill="url(#background)" stroke="#3a4b66" stroke-width="2"/>
+  <rect x="2" y="2" width="1116" height="388" rx="23" fill="url(#grid)"/>
+
+  <g font-family="ui-sans-serif, system-ui, Segoe UI, sans-serif">
+    <text x="48" y="54" font-size="17" letter-spacing="3" font-weight="700" fill="#a1b8d9">CORNUCAT · PACKET WORKFLOW</text>
+    <text x="48" y="97" font-size="35" font-weight="700" fill="#f1f6ff">One packet builder, two paths</text>
+
+    <rect x="48" y="130" width="426" height="214" rx="16" fill="#17243c" stroke="#52658d" stroke-width="2"/>
+    <rect x="74" y="155" width="42" height="42" rx="9" fill="#2c3b68"/>
+    <path d="M85 169h20v4H85zm0 7h20v4H85zm0 7h20v4H85z" fill="#c3ceff"/>
+    <text x="132" y="184" font-size="27" font-weight="700" fill="#f1f6ff">IPv4 packet builder</text>
+    <text x="75" y="231" font-size="21" fill="#d1def1">Templates + software checksums</text>
+
+    <g font-size="17" font-weight="700" text-anchor="middle" fill="#e0e7ff">
+      <rect x="75" y="261" width="75" height="40" rx="9" fill="#263a5d"/>
+      <text x="112.5" y="287">UDP</text>
+      <rect x="160" y="261" width="75" height="40" rx="9" fill="#263a5d"/>
+      <text x="197.5" y="287">TCP</text>
+      <rect x="245" y="261" width="80" height="40" rx="9" fill="#263a5d"/>
+      <text x="285" y="287">ICMP</text>
+    </g>
+
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5">
+      <path d="M474 237H536" stroke="#8196be"/>
+      <path d="M536 237v-58h79m-12-10 12 10-12 10" stroke="#b7a2fc"/>
+      <path d="M536 237v58h79m-12-10 12 10-12 10" stroke="#6ad7c5"/>
+    </g>
+    <circle cx="536" cy="237" r="5" fill="#c1cff0"/>
+
+    <rect x="628" y="130" width="444" height="98" rx="15" fill="#251f3c" stroke="#7767ad" stroke-width="2"/>
+    <circle cx="659" cy="161" r="5" fill="#b7a2fc"/>
+    <text x="676" y="170" font-size="25" font-weight="700" fill="#f1edff">Offline PCAP</text>
+    <text x="654" y="201" font-size="19" fill="#e1d6f2">Write or inspect a capture</text>
+
+    <rect x="628" y="246" width="444" height="98" rx="15" fill="#142d39" stroke="#4d8a89" stroke-width="2"/>
+    <circle cx="659" cy="277" r="5" fill="#6ad7c5"/>
+    <text x="676" y="286" font-size="25" font-weight="700" fill="#eafffa">Linux DPDK</text>
+    <text x="654" y="317" font-size="19" fill="#c5e7e4">Use a prepared DPDK port</text>
+  </g>
+</svg>

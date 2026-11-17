@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 416" width="1120" height="416" role="img" aria-labelledby="performance-title performance-description">
+  <title id="performance-title">CornuCat single-core performance</title>
+  <desc id="performance-description">Single-core TCP ACK packet rates on a dedicated server: CornuCat 13.6 million packets per second, Pktgen-DPDK approximately 8 million, and simple Python/C programs using the default Linux stack up to 1.5 million. Older Intel Xeon CPU costing approximately US$50.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#11192c"/>
+      <stop offset="1" stop-color="#101e31"/>
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#8da8ce" opacity=".17"/>
+    </pattern>
+  </defs>
+
+  <rect x="1" y="1" width="1118" height="414" rx="24" fill="url(#background)" stroke="#3a4b66" stroke-width="2"/>
+  <rect x="2" y="2" width="1116" height="412" rx="23" fill="url(#grid)"/>
+
+  <g font-family="ui-sans-serif, system-ui, Segoe UI, sans-serif">
+    <text x="48" y="52" font-size="17" letter-spacing="3" font-weight="700" fill="#a1b8d9">CORNUCAT</text>
+    <text x="48" y="96" font-size="35" font-weight="700" fill="#f1f6ff">Single-core performance</text>
+    <text x="48" y="128" font-size="21" fill="#d1def1">Dedicated server · Older Intel Xeon · Approx. US$50 CPU</text>
+
+    <rect x="48" y="155" width="1024" height="208" rx="16" fill="#17243c" stroke="#52658d" stroke-width="2"/>
+    <g stroke="#485e80" stroke-width="1">
+      <path d="M368 173v156M576 173v156M784 173v156M992 173v156"/>
+      <path d="M368 329h624"/>
+    </g>
+    <path d="M368 173v156" fill="none" stroke="#9bb1d1" stroke-width="2"/>
+
+    <g font-size="20" font-weight="700" fill="#f1f6ff">
+      <text x="72" y="198">CornuCat</text>
+      <text x="72" y="249">Pktgen-DPDK</text>
+      <text x="72" y="300">Default Linux stack</text>
+    </g>
+    <g font-size="15" fill="#b3c6e2">
+      <text x="72" y="217">DPDK packet generator</text>
+      <text x="72" y="268">DPDK benchmark application</text>
+      <text x="72" y="319">Simple Python / C programs</text>
+    </g>
+
+    <rect x="368" y="186" width="565.76" height="27" rx="4" fill="#6ad7c5"/>
+    <rect x="368" y="237" width="332.8" height="27" rx="4" fill="#b7a2fc"/>
+    <rect x="368" y="288" width="62.4" height="27" rx="4" fill="#a1b8d9"/>
+    <g font-size="17" font-weight="700" fill="#17243c" text-anchor="end" style="font-variant-numeric:tabular-nums">
+      <text x="922" y="205">13.6</text>
+      <text x="689" y="256">≈8.0</text>
+      <text x="442" y="307" text-anchor="start" fill="#d1def1">Up to 1.5</text>
+    </g>
+    <g font-size="16" fill="#d1def1" text-anchor="middle">
+      <text x="368" y="350">0</text>
+      <text x="576" y="350">5</text>
+      <text x="784" y="350">10</text>
+      <text x="992" y="350">15 Mpps</text>
+    </g>
+
+    <g font-size="16" fill="#b3c6e2">
+      <text x="48" y="392">Raw TCP ACK traffic · Mpps = million packets per second</text>
+    </g>
+  </g>
+</svg>

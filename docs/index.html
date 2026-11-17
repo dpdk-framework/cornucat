@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore the layers of an Ethernet / IPv4 frame and see what happens to checksums when a template changes.">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <title>Packet Anatomy · CornuCat</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #0b1120;
+      --surface: #101a2d;
+      --control: #152138;
+      --border: #354766;
+      --text: #f0f5ff;
+      --muted: #b0bfd8;
+      --faint: #94a7c5;
+      --mint: #7cebd1;
+      --blue: #a8c4ff;
+      --violet: #d0baff;
+      --warm: #f9c790;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--text); }
+    a { color: var(--mint); }
+    a:hover { color: var(--text); }
+    :focus-visible { outline: 2px solid var(--mint); outline-offset: 4px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; color: inherit; }
+    .wrap { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; }
+    .mono { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; }
+    .sr-only { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; white-space: nowrap; }
+    .skip { position: fixed; z-index: 2; inset: 0 auto auto 1rem; padding: .65rem 1rem; background: var(--canvas); transform: translateY(-150%); }
+    .skip:focus { transform: translateY(.8rem); }
+    .site-head { border-bottom: 1px solid var(--border); }
+    .site-head .wrap { min-height: 4rem; display: flex; gap: .85rem; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: .6rem; font-size: .87rem; font-weight: 700; }
+    .brand svg { color: var(--mint); flex: none; }
+    .source-link { font-size: .82rem; text-underline-offset: .25em; text-align: end; }
+    .intro { position: relative; padding-block: 3.55rem 2rem; isolation: isolate; }
+    .intro::before { pointer-events: none; content: ''; position: absolute; z-index: -1; inset: 0; background: radial-gradient(ellipse at 78% 0, #102d43 0, transparent 70%); }
+    .intro .wrap { display: grid; gap: 1.4rem; grid-template-columns: 1fr auto; align-items: end; }
+    .eyebrow, legend, .label { color: var(--faint); font: 700 .73rem/1.5 ui-monospace, 'Cascadia Code', Consolas, monospace; letter-spacing: .09em; text-transform: uppercase; }
+    .intro .eyebrow { color: var(--mint); display: block; margin-bottom: .6rem; }
+    h1 { margin: 0; font-size: clamp(2.4rem, 7.9vw, 4.55rem); line-height: 1; letter-spacing: -.065em; }
+    .intro p { margin: .95rem 0 0; max-width: 55ch; color: var(--muted); line-height: 1.58; }
+    .pill { display: flex; gap: .45rem; align-items: center; justify-self: start; width: max-content; max-width: 100%; border: 1px solid #3f716d; border-radius: 999px; padding: .4rem .65rem; background: #11262e; color: var(--mint); font-size: .74rem; }
+    .pill svg { flex: none; }
+    main { padding-bottom: 2.3rem; }
+    .bench, .detail { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; }
+    .bench { padding: 1.25rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: start; justify-content: space-between; }
+    fieldset { min-inline-size: 0; padding: 0; margin: 0; border: 0; }
+    legend { margin-bottom: .45rem; }
+    .segmented { display: flex; flex-wrap: wrap; gap: .37rem; }
+    .option { position: relative; }
+    .option input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+    .option span, .step { min-height: 2.6rem; padding: .52rem .75rem; border: 1px solid var(--border); border-radius: .52rem; background: var(--control); display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-size: .84rem; font-weight: 700; }
+    .option span { cursor: pointer; }
+    .option input:checked + span { background: #183449; color: var(--mint); border-color: #5cbda9; }
+    .option input:focus-visible + span { outline: 2px solid var(--mint); outline-offset: 3px; }
+    .option input:not(:checked):hover + span, .step:hover { border-color: var(--faint); color: var(--text); }
+    .layer-head { display: flex; gap: .5rem 1rem; flex-wrap: wrap; justify-content: space-between; align-items: baseline; margin: 1.55rem 0 .68rem; }
+    .layer-head h2, .detail h2 { margin: 0; font-size: 1.12rem; letter-spacing: -.018em; }
+    .hint { color: var(--faint); margin: 0; font-size: .8rem; }
+    .stack { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem; }
+    .layer { --accent: var(--mint); min-height: 6rem; padding: .72rem; text-align: start; border: 1px solid var(--border); border-top: .22rem solid var(--accent); border-radius: .65rem; background: var(--control); display: grid; align-content: start; gap: .25rem; }
+    .layer[data-layer="ipv4"] { --accent: var(--blue); }
+    .layer[data-layer="protocol"] { --accent: var(--violet); }
+    .layer[data-layer="payload"] { --accent: var(--warm); }
+    .layer:hover, .layer[aria-pressed="true"] { border-color: var(--accent); }
+    .layer[aria-pressed="true"] { background: #20304c; }
+    .layer-num { color: var(--accent); font-size: .72rem; font-weight: 750; }
+    .layer strong { font-size: clamp(.92rem, 2vw, 1.15rem); line-height: 1.1; }
+    .layer small { color: var(--muted); font-size: .75rem; line-height: 1.33; }
+    .detail-grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); margin-top: 1rem; }
+    .detail { padding: 1.1rem 1.2rem; }
+    .detail h2 { margin-top: .25rem; }
+    .detail p { color: var(--muted); font-size: .88rem; line-height: 1.56; margin: .47rem 0 0; }
+    #layer-tag { color: var(--mint); }
+    .detail .check-note { margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .67rem; color: var(--text); }
+    .compare-head { display: flex; justify-content: space-between; align-items: center; gap: .55rem; }
+    .step { white-space: nowrap; }
+    .step svg { flex: none; color: var(--mint); }
+    .comparison { display: grid; grid-template-columns: minmax(0, 1fr) 1.65rem minmax(0, 1fr); gap: .35rem; align-items: center; margin: .75rem 0 .5rem; }
+    .frame { border: 1px solid var(--border); border-radius: .5rem; background: var(--control); padding: .55rem .65rem; display: grid; gap: .12rem; }
+    .frame strong { color: var(--text); font-size: .86rem; }
+    .frame small { color: var(--mint); font-size: .73rem; }
+    .frame[data-change="updated"] small { color: var(--warm); }
+    .arrow { color: var(--faint); justify-self: center; }
+    .next-caption { min-height: 2.75em; }
+    footer { border-top: 1px solid var(--border); padding-block: 1.2rem; }
+    footer p { margin: 0; color: var(--faint); font-size: .82rem; line-height: 1.55; }
+    noscript p { border: 1px solid var(--warm); color: var(--warm); padding: .65rem; }
+    @media (max-width: 730px) {
+      .intro { padding-block: 2.3rem 1.5rem; }
+      .intro .wrap, .detail-grid { grid-template-columns: 1fr; }
+      .intro .wrap { gap: .85rem; }
+      .stack { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 440px) {
+      .wrap { width: calc(100% - 1.5rem); }
+      .brand, .source-link { font-size: .75rem; }
+      .bench, .detail { padding: .86rem; }
+      .layer { min-height: 5.55rem; }
+      .step { font-size: .75rem; padding-inline: .55rem; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#explorer">Skip to explorer</a>
+  <header class="site-head">
+    <div class="wrap">
+      <span class="brand">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round">
+          <path d="m12 3 9 4.5-9 4.5-9-4.5L12 3Z M3 12l9 4.5 9-4.5 M3 16.5l9 4.5 9-4.5"/>
+        </svg>
+        CornuCat
+      </span>
+      <a class="source-link" href="https://github.com/dpdk-framework/cornucat">View source on GitHub</a>
+    </div>
+  </header>
+
+  <section class="intro" aria-labelledby="title">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Interactive guide &nbsp;/&nbsp; Ethernet + IPv4</span>
+        <h1 id="title">Packet anatomy</h1>
+        <p>Look inside a frame. Choose a protocol, inspect a layer, and see how a static template differs from a sequence of changing frames.</p>
+      </div>
+      <span class="pill">
+        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.45">
+          <path d="M2.5 8 6 11.5 13.5 4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Browser-only · No traffic sent
+      </span>
+    </div>
+  </section>
+
+  <main class="wrap" id="explorer" tabindex="-1">
+    <noscript><p>The default frame is shown below. Enable JavaScript to switch protocols, inspect layers, and step through the example.</p></noscript>
+    <section class="bench" aria-labelledby="frame-title">
+      <div class="toolbar">
+        <fieldset>
+          <legend>01 / Protocol</legend>
+          <div class="segmented">
+            <label class="option"><input type="radio" name="protocol" value="udp" checked><span>UDP</span></label>
+            <label class="option"><input type="radio" name="protocol" value="tcp"><span>TCP</span></label>
+            <label class="option"><input type="radio" name="protocol" value="icmp"><span>ICMP</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>02 / Template</legend>
+          <div class="segmented">
+            <label class="option"><input type="radio" name="template" value="static" checked><span>Static</span></label>
+            <label class="option"><input type="radio" name="template" value="sequence"><span>Sequence</span></label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="layer-head">
+        <h2 id="frame-title">Explore the frame</h2>
+        <p class="hint">Choose a layer. Diagram is not to scale.</p>
+      </div>
+      <div class="stack" role="group" aria-label="Frame layers">
+        <button type="button" class="layer" data-layer="ethernet" aria-pressed="false" aria-controls="layer-detail"><span class="layer-num mono">01 / LINK</span><strong>Ethernet</strong><small>Local-link frame header</small></button>
+        <button type="button" class="layer" data-layer="ipv4" aria-pressed="true" aria-controls="layer-detail"><span class="layer-num mono">02 / NETWORK</span><strong>IPv4</strong><small>Addresses and hop limit</small></button>
+        <button type="button" class="layer" data-layer="protocol" aria-pressed="false" aria-controls="layer-detail"><span class="layer-num mono" id="protocol-layer-label">03 / TRANSPORT</span><strong id="protocol-layer-name">UDP</strong><small id="protocol-layer-summary">Datagram header</small></button>
+        <button type="button" class="layer" data-layer="payload" aria-pressed="false" aria-controls="layer-detail"><span class="layer-num mono">04 / DATA</span><strong>Payload</strong><small>Bytes carried by the message</small></button>
+      </div>
+    </section>
+
+    <div class="detail-grid">
+      <section class="detail" id="layer-detail" aria-labelledby="layer-title">
+        <span class="label" id="layer-tag">Network layer</span>
+        <h2 id="layer-title">IPv4 header</h2>
+        <p id="layer-description">The IPv4 header identifies the source and destination, the next protocol, and how many forwarding hops remain.</p>
+        <p class="check-note" id="layer-checksum">Checksum coverage: the IPv4 header, excluding the data it carries.</p>
+      </section>
+      <section class="detail" aria-labelledby="comparison-title">
+        <div class="compare-head">
+          <div>
+            <span class="label">Template behavior</span>
+            <h2 id="comparison-title">What changes?</h2>
+          </div>
+          <button type="button" class="step" id="step-frame">Next frame <svg aria-hidden="true" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10m-4-4 4 4-4 4"/></svg></button>
+        </div>
+        <div class="comparison">
+          <div class="frame"><strong id="frame-before">Frame 1</strong><small>Starting point</small></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="frame" id="frame-change" data-change="reused"><strong id="frame-after">Frame 2</strong><small id="frame-state">Checksum reused</small></div>
+        </div>
+        <p class="next-caption" id="comparison-text">Under fixed settings, both frames have identical bytes. CornuCat can reuse the checksum already in the template.</p>
+      </section>
+    </div>
+    <p class="sr-only" id="announcement" role="status" aria-atomic="true"></p>
+  </main>
+  <footer><div class="wrap"><p>This illustration does not build packet bytes or open a network connection.</p></div></footer>
+
+  <script>
+    'use strict';
+    const layers = {
+      ethernet: ['Link layer', 'Ethernet header', 'The Ethernet header describes how the frame is delivered on the local link. Its EtherType identifies the enclosed IPv4 packet.', 'Checksum coverage: Ethernet FCS is separate from the IPv4 and protocol checksums, and is not pictured.'],
+      ipv4: ['Network layer', 'IPv4 header', 'The IPv4 header identifies the source and destination, the next protocol, and how many forwarding hops remain.', 'Checksum coverage: the IPv4 header, excluding the data it carries.'],
+      payload: ['Message data', 'Payload', 'The payload is data carried by the selected message. Identical data can be reused as part of an unchanged template.', 'Checksum coverage: protocol checksums cover the payload; the IPv4 header checksum does not.']
+    };
+    const protocols = {
+      udp: {
+        label: 'TRANSPORT', name: 'UDP', summary: 'Datagram header',
+        layer: ['Transport layer', 'UDP header', 'UDP carries individual datagrams. The header describes the ports and datagram length without establishing a session.', 'Checksum coverage: the UDP header, payload, and selected IPv4 information. CornuCat writes the UDP checksum.']
+      },
+      tcp: {
+        label: 'TRANSPORT', name: 'TCP', summary: 'Segment header',
+        layer: ['Transport layer', 'TCP header', 'TCP includes port, sequence, acknowledgment and flag fields. A header in this illustration does not establish a connection.', 'Checksum coverage: the TCP header, payload, and selected IPv4 information.']
+      },
+      icmp: {
+        label: 'CONTROL', name: 'ICMP', summary: 'Echo request header',
+        layer: ['Network control message', 'ICMP Echo Request', 'An Echo Request is an IPv4 control message. ICMP uses type and code fields rather than TCP or UDP ports.', 'Checksum coverage: the whole ICMP message, including its data. The IPv4 header is checked separately.']
+      }
+    };
+    const byId = id => document.getElementById(id);
+    const layerButtons = Array.from(document.querySelectorAll('button[data-layer]'));
+    let selectedLayer = 'ipv4';
+    let frame = 1;
+
+    function update(announce = true) {
+      const protocol = protocols[document.querySelector('input[name="protocol"]:checked').value];
+      const sequence = document.querySelector('input[name="template"]:checked').value === 'sequence';
+      const layer = selectedLayer === 'protocol' ? protocol.layer : layers[selectedLayer];
+      const state = sequence ? 'Checksums updated' : 'Checksum reused';
+      byId('protocol-layer-label').textContent = `03 / ${protocol.label}`;
+      byId('protocol-layer-name').textContent = protocol.name;
+      byId('protocol-layer-summary').textContent = protocol.summary;
+      for (const button of layerButtons) button.setAttribute('aria-pressed', String(button.dataset.layer === selectedLayer));
+      ['layer-tag', 'layer-title', 'layer-description', 'layer-checksum'].forEach((id, i) => { byId(id).textContent = layer[i]; });
+      byId('frame-before').textContent = `Frame ${frame}`;
+      byId('frame-after').textContent = `Frame ${frame + 1}`;
+      byId('frame-state').textContent = state;
+      byId('frame-change').dataset.change = sequence ? 'updated' : 'reused';
+      byId('comparison-text').textContent = sequence
+        ? 'Sequence-dependent fields can change between frames. CornuCat updates the checksums that cover the changed fields.'
+        : 'Under fixed settings, both frames have identical bytes. CornuCat can reuse the checksum already in the template.';
+      if (announce) byId('announcement').textContent = `${protocol.name}. ${layer[1]}. Frame ${frame} to ${frame + 1}: ${state.toLowerCase()}.`;
+    }
+
+    for (const radio of document.querySelectorAll('input[type="radio"]')) radio.addEventListener('change', () => update());
+    for (const button of layerButtons) button.addEventListener('click', () => {
+      selectedLayer = button.dataset.layer;
+      update();
+    });
+    byId('step-frame').addEventListener('click', () => {
+      frame = frame === 99 ? 1 : frame + 1;
+      update();
+    });
+    update(false);
+  </script>
+</body>
+</html>
